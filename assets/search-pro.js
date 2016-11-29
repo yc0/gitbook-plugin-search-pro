@@ -1,4 +1,4 @@
-require(['gitbook', 'lodash'], function(gitbook, _) {
+require(['gitbook'], function(gitbook, _) {
     var events = gitbook.events;
     var sidebar = gitbook.sidebar;
     var state = gitbook.state;
@@ -13,7 +13,7 @@ require(['gitbook', 'lodash'], function(gitbook, _) {
         if ($searchForm) $searchForm.remove();
 
         $searchForm = $('<div>', {
-            'class': 'book-search',
+            'id': 'book-search-input',
             'role': 'search'
         });
 
@@ -35,8 +35,11 @@ require(['gitbook', 'lodash'], function(gitbook, _) {
         $('.page-inner').html($('.page-inner').html().replace(reg,'$1<span class="search-highlight">$2</span>'));
         
         // 定位到第一个高亮词
-        var firstWordTop = $('.search-highlight')[0].offsetTop;
-        $('.body-inner').scrollTop(firstWordTop);
+        if (undefined !== $('.search-highlight')[0]) {
+            var firstWordTop = $('.search-highlight')[0].offsetTop;
+            $('.body-inner').scrollTop(firstWordTop);
+        }
+        
         
     };
 
@@ -65,9 +68,15 @@ require(['gitbook', 'lodash'], function(gitbook, _) {
         var matchPageIndexs = indexData.searchIndexMap[keyword];
 
         // 生成供筛选参数（路径列表）
-        _(matchPageIndexs).forEach(function(matchIndex) {
-            matchPaths.push(indexData.pageIndex[matchIndex].path);
-        }).value();
+        // Here, we adopt jquery original iteration way
+        // instead of _ on lodash
+        // modified by yc0
+        if ( undefined !== matchPageIndexs && matchPageIndexs.length) {
+            $.each(matchPageIndexs, function(idx,matchIndex) {
+                matchPaths.push(indexData.pageIndex[matchIndex].path);
+            });
+        }
+        
         
         return matchPaths;
     };
@@ -76,7 +85,7 @@ require(['gitbook', 'lodash'], function(gitbook, _) {
     var toggleSearch = function(_state) {
         if (state != null && isSearchOpen() == _state) return;
 
-        var $searchInput = $(".book-search input");
+        var $searchInput = $("#book-search-input input");
         state.$book.toggleClass("with-search", _state);
 
         // If search bar is open: focus input
@@ -95,7 +104,7 @@ require(['gitbook', 'lodash'], function(gitbook, _) {
     // 还原搜索框状态
     var recoverSearch = function() {
         var keyword = storage.get("keyword", "");
-        createForm(keyword);
+        //createForm(keyword);
         if(keyword.length > 0) {
             
             // 是否收起search
@@ -111,13 +120,13 @@ require(['gitbook', 'lodash'], function(gitbook, _) {
             
             
         }
-        $(".book-search input").val(keyword);
+        $("#book-search-input input").val(keyword);
     };
     
     // 初始化函数
     var init = function () {
         // 在SearchBar中输入
-        $(document).on("keyup", ".book-search input", function(e) {
+        $(document).on("keyup", "#book-search-input input", function(e) {
 
             var keyword = $(this).val().toUpperCase();
             
@@ -151,7 +160,7 @@ require(['gitbook', 'lodash'], function(gitbook, _) {
         });
 
         // Create search form
-        createForm();
+        //createForm();
         // Create the toggle search button
         gitbook.toolbar.createButton({
             icon: 'fa fa-search',
